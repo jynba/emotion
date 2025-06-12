@@ -3,36 +3,33 @@
     <view class="scene">
       <!-- 背景 -->
       <view class="background">
-        <image src="/static/images/cemetery-bg.png" mode="aspectFill" class="bg-image" />
+        <image src="../static/images/cemetery-bg-yellow.png" mode="aspectFill" class="bg-image" />
       </view>
 
       <!-- 小动物 -->
       <view class="companion" :class="[companion, { 'is-carrying': isCarrying }]">
         <image :src="companionImage" mode="aspectFit" class="companion-image" />
         <!-- 情绪纸条 -->
-        <view class="emotion-note" :class="{ 'is-visible': isCarrying }">
+        <!-- <view class="emotion-note" :class="{ 'is-visible': isCarrying }">
           <view class="note-content">
             <text class="note-type">{{ emotionType }}</text>
             <text class="note-desc">{{ description }}</text>
           </view>
-        </view>
+        </view> -->
       </view>
 
       <!-- 情绪卡片 -->
       <view class="emotion-card" :class="{ 'is-burying': isBurying }">
-        <view class="card-content">
-          <text class="emotion-type">{{ emotionType }}</text>
-          <text class="emotion-desc">{{ description }}</text>
-        </view>
+        <image src="/static/images/emotion.png" mode="aspectFit" class="card-image" />
       </view>
 
       <!-- 铲子 -->
-      <view class="shovel" :class="{ 'is-digging': isDigging }">
+      <view class="shovel" :class="{ 'is-digging': isDigging, 'is-hidden': !isDigging }">
         <image src="/static/images/shovel.png" mode="aspectFit" class="shovel-image" />
       </view>
 
       <!-- 土堆 -->
-      <view class="soil" :class="{ 'is-dug': isDigging }">
+      <view class="soil" :class="{ 'is-dug': isDigging, 'is-visible': isSoil }">
         <image src="/static/images/soil.png" mode="aspectFit" class="soil-image" />
       </view>
 
@@ -43,7 +40,7 @@
 
       <!-- 情绪之花 -->
       <view class="flower" :class="{ 'is-grown': isGrown }">
-        <image :src="flowerImage" mode="aspectFit" class="flower-image" />
+        <image src="../static/images/flower.png" mode="aspectFit" class="flower-image" />
       </view>
     </view>
 
@@ -53,8 +50,8 @@
     </view>
 
     <!-- 音效控制 -->
-    <audio id="digSound" src="/static/sounds/dig.mp3" />
-    <audio id="bellSound" src="/static/sounds/bell.mp3" />
+    <!-- <audio id="digSound" src="/static/sounds/dig.mp3" />
+    <audio id="bellSound" src="/static/sounds/bell.mp3" /> -->
   </view>
 </template>
 
@@ -67,9 +64,6 @@ const props = defineProps<{
   description: string;
 }>();
 
-const companionImage = computed(() => `/static/images/${props.companion}.png`);
-const flowerImage = computed(() => `/static/images/flower-${props.emotionType}.png`);
-
 const isCarrying = ref(false);
 const isDigging = ref(false);
 const isBurying = ref(false);
@@ -77,15 +71,16 @@ const isPlanted = ref(false);
 const isGrown = ref(false);
 const showSpeech = ref(false);
 const currentSpeech = ref('');
+const isSoil = ref(false);
 
 // 音效控制
-const playSound = (soundId: string) => {
-  const audio = document.getElementById(soundId) as HTMLAudioElement;
-  if (audio) {
-    audio.currentTime = 0;
-    audio.play().catch(err => console.log('Audio play failed:', err));
-  }
-};
+// const playSound = (soundId: string) => {
+//   const audio = document.getElementById(soundId) as HTMLAudioElement;
+//   if (audio) {
+//     audio.currentTime = 0;
+//     audio.play().catch(err => console.log('Audio play failed:', err));
+//   }
+// };
 
 const speeches = {
   cat: [
@@ -108,33 +103,53 @@ const speeches = {
   ]
 };
 
+const companionImage = computed(() => {
+  return `/static/images/${props.companion}.png`;
+});
+
 const startAnimation = async () => {
   // 开始对话
   showSpeech.value = true;
   currentSpeech.value = speeches[props.companion][0];
 
-  // 等待1秒后叼起纸条
+  // 等待1秒后开始挖坑
   await new Promise(resolve => setTimeout(resolve, 1000));
-  isCarrying.value = true;
-
-  // 等待2秒后开始挖坑
-  await new Promise(resolve => setTimeout(resolve, 2000));
   isDigging.value = true;
   currentSpeech.value = speeches[props.companion][1];
-  playSound('digSound'); // 播放挖土音效
+  // playSound('digSound');
 
-  // 等待3秒后放下纸条
-  await new Promise(resolve => setTimeout(resolve, 3000));
-  isCarrying.value = false;
-  playSound('bellSound'); // 播放铃铛音效
-
-  // 等待2秒后种下种子
+  // 等待2秒后出现土壤
   await new Promise(resolve => setTimeout(resolve, 2000));
-  isPlanted.value = true;
+  isSoil.value = true;
+
+  // 等待1秒后卡片开始下落
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  isBurying.value = true;  // 显示卡片并开始下落
+
+  // 等待2秒停顿
+  await new Promise(resolve => setTimeout(resolve, 2000));
+
+  // 继续挖坑动画
+  isDigging.value = true;
   currentSpeech.value = speeches[props.companion][2];
 
-  // 等待2秒后开花
+  // 等待2秒后卡片消失，土壤消失
   await new Promise(resolve => setTimeout(resolve, 2000));
+  isBurying.value = false;  // 隐藏卡片
+  isSoil.value = false;
+
+  // 等待1秒停顿
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  // 挖坑动画停止
+  isDigging.value = false;
+
+  // 等待1秒后种子出现
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  isPlanted.value = true;
+
+  // 等待1秒后种子消失，同时花出现
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  isPlanted.value = false;
   isGrown.value = true;
   currentSpeech.value = speeches[props.companion][3];
 
@@ -183,27 +198,27 @@ onMounted(() => {
   .companion {
     position: absolute;
     bottom: 200rpx;
-    left: 50%;
-    transform: translateX(-50%);
+    right: 180rpx;
+    transform: translateX(50%);
     width: 200rpx;
     height: 200rpx;
     transition: all 0.5s ease;
 
     &.is-carrying {
-      transform: translateX(-50%) translateY(-20rpx);
+      transform: translateX(50%) translateY(-20rpx);
       animation: floating 1s ease-in-out infinite;
     }
 
     &.cat {
-      bottom: 180rpx;
+      bottom: 250rpx;
     }
 
     &.dog {
-      bottom: 160rpx;
+      bottom: 250rpx;
     }
 
     &.bear {
-      bottom: 170rpx;
+      bottom: 220rpx;
     }
 
     .companion-image {
@@ -214,49 +229,49 @@ onMounted(() => {
 
   .emotion-card {
     position: absolute;
-    top: 50%;
+    bottom: 320rpx;
     left: 50%;
-    transform: translate(-50%, -50%);
-    width: 400rpx;
-    padding: 30rpx;
-    background: #fff;
-    border-radius: 20rpx;
-    box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
-    transition: all 0.5s ease;
+    transform: translate(-50%, 0);
+    width: 100rpx;
+    height: 100rpx;
+    transition: all 1s ease;
+    z-index: 2;
+    opacity: 0;
+    visibility: hidden;
 
     &.is-burying {
-      transform: translate(-50%, 100%);
-      opacity: 0;
+      transform: translate(-50%, 90%);
+      opacity: 1;
+      visibility: visible;
+      animation: cardFall 2s ease-in forwards;
     }
 
-    .card-content {
-      .emotion-type {
-        display: block;
-        font-size: 32rpx;
-        color: #5d4037;
-        font-weight: 500;
-        margin-bottom: 16rpx;
-      }
-
-      .emotion-desc {
-        font-size: 28rpx;
-        color: #6b4f4f;
-        line-height: 1.6;
-      }
+    .card-image {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
     }
   }
 
   .shovel {
     position: absolute;
     bottom: 300rpx;
-    right: 100rpx;
+    left: 50%;
     width: 100rpx;
     height: 100rpx;
-    transform-origin: bottom right;
+    transform-origin: bottom center;
     transition: all 0.5s ease;
+    z-index: 3;
+    opacity: 1;
+    visibility: visible;
 
     &.is-digging {
       animation: digging 1s infinite;
+    }
+
+    &.is-hidden {
+      opacity: 0;
+      visibility: hidden;
     }
 
     .shovel-image {
@@ -267,12 +282,19 @@ onMounted(() => {
 
   .soil {
     position: absolute;
-    bottom: 0;
+    bottom: 200rpx;
     left: 50%;
-    transform: translateX(-50%);
+    transform: translateX(-50%) scale(0);
     width: 300rpx;
     height: 200rpx;
     transition: all 0.5s ease;
+    z-index: 1;
+    opacity: 0;
+
+    &.is-visible {
+      transform: translateX(-50%) scale(1);
+      opacity: 1;
+    }
 
     &.is-dug {
       transform: translateX(-50%) scale(1.2);
@@ -287,17 +309,19 @@ onMounted(() => {
 
   .seed {
     position: absolute;
-    bottom: 200rpx;
+    bottom: 260rpx;
     left: 50%;
     transform: translate(-50%, 100%);
     width: 60rpx;
     height: 60rpx;
     opacity: 0;
     transition: all 0.5s ease;
+    z-index: 2;
 
     &.is-planted {
       transform: translate(-50%, 0);
       opacity: 1;
+      animation: seedDisappear 1s forwards;
     }
 
     .seed-image {
@@ -308,13 +332,14 @@ onMounted(() => {
 
   .flower {
     position: absolute;
-    bottom: 200rpx;
+    bottom: 300rpx;
     left: 50%;
     transform: translate(-50%, 100%);
     width: 120rpx;
     height: 120rpx;
     opacity: 0;
-    transition: all 0.5s ease;
+    transition: all 0.3s ease;
+    z-index: 2;
 
     &.is-grown {
       transform: translate(-50%, 0);
@@ -324,57 +349,6 @@ onMounted(() => {
     .flower-image {
       width: 100%;
       height: 100%;
-    }
-  }
-
-  .emotion-note {
-    position: absolute;
-    top: -80rpx;
-    left: 50%;
-    transform: translateX(-50%) scale(0);
-    width: 160rpx;
-    padding: 16rpx;
-    background: #fff;
-    border-radius: 12rpx;
-    box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
-    opacity: 0;
-    transition: all 0.3s ease;
-
-    &.is-visible {
-      transform: translateX(-50%) scale(1);
-      opacity: 1;
-    }
-
-    &::after {
-      content: '';
-      position: absolute;
-      bottom: -10rpx;
-      left: 50%;
-      transform: translateX(-50%);
-      border: 6rpx solid transparent;
-      border-top-color: #fff;
-    }
-
-    .note-content {
-      .note-type {
-        display: block;
-        font-size: 24rpx;
-        color: #5d4037;
-        font-weight: 500;
-        margin-bottom: 8rpx;
-        text-align: center;
-      }
-
-      .note-desc {
-        font-size: 20rpx;
-        color: #6b4f4f;
-        line-height: 1.4;
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-        text-align: center;
-      }
     }
   }
 
@@ -417,11 +391,11 @@ onMounted(() => {
 
   0%,
   100% {
-    transform: translateX(-50%) translateY(-20rpx);
+    transform: translateX(50%) translateY(-20rpx);
   }
 
   50% {
-    transform: translateX(-50%) translateY(-30rpx);
+    transform: translateX(50%) translateY(-30rpx);
   }
 }
 
@@ -445,11 +419,48 @@ onMounted(() => {
   }
 
   50% {
-    transform: rotate(-30deg);
+    transform: rotate(15deg);
   }
 
   100% {
     transform: rotate(0deg);
+  }
+}
+
+@keyframes seedDisappear {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+
+  80% {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -20rpx);
+  }
+}
+
+@keyframes cardFall {
+  0% {
+    transform: translate(-50%, 0);
+    opacity: 1;
+    visibility: visible;
+  }
+
+  80% {
+    transform: translate(-50%, 100%);
+    opacity: 1;
+    visibility: visible;
+  }
+
+  100% {
+    transform: translate(-50%, 100%);
+    opacity: 0;
+    visibility: hidden;
   }
 }
 

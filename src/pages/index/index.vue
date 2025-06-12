@@ -35,8 +35,10 @@
               :class="{ 'is-selected': selectedCompanion === companion.value }"
               @click="selectCompanion(companion.value)">
               <image :src="companion.image" mode="aspectFit" class="companion-image" />
-              <text class="companion-name">{{ companion.label }}</text>
-              <text class="companion-desc">{{ companion.description }}</text>
+              <view class="companion-msg">
+                <text class="companion-name">{{ companion.label }}</text>
+                <text class="companion-desc">{{ companion.description }}</text>
+              </view>
             </view>
           </view>
         </view>
@@ -47,8 +49,8 @@
       </view>
 
       <!-- 埋葬动画 -->
-      <bury-animation v-if="showAnimation" :companion="selectedCompanion" :emotion-type="selectedEmotion"
-        :description="emotionDescription" @complete="onBuryingComplete" />
+      <buryAnimation v-if="showAnimation" :companion="selectedCompanion" :emotion-type="selectedEmotion"
+        :description="emotionDescription" @complete="onBuryingComplete" @animation-end="handleAnimationEnd" />
     </view>
 
     <!-- 历史记录入口 -->
@@ -63,10 +65,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { onShow } from '@dcloudio/uni-app';
 import FloatingMenu from '@/components/FloatingMenu.vue';
-// import BuryAnimation from '@/components/BuryAnimation.vue';
+import BuryAnimation from '@/components/BuryAnimation.vue';
 
 // 当前页面路径
 const currentPage = ref('/pages/index/index');
@@ -103,7 +105,7 @@ const companions = [
 ];
 
 // 表单数据
-const selectedEmotion = ref('');
+const selectedEmotion = ref<string | null>(null);
 const emotionDescription = ref<string>('');
 const selectedCompanion = ref('');
 const showAnimation = ref(false);
@@ -139,7 +141,7 @@ const startBurying = () => {
 
   // 保存到本地存储
   const emotions = uni.getStorageSync('emotions') || [];
-  emotions.unshift(emotion);
+  emotions.push(emotion);
   uni.setStorageSync('emotions', emotions);
 
   // 显示动画
@@ -149,7 +151,7 @@ const startBurying = () => {
 // 埋葬完成回调
 const onBuryingComplete = () => {
   // 重置表单
-  selectedEmotion.value = '';
+  selectedEmotion.value = null;
   emotionDescription.value = '';
   selectedCompanion.value = '';
   showAnimation.value = false;
@@ -164,6 +166,37 @@ const onBuryingComplete = () => {
 
 // 跳转到历史记录
 const goToHistory = () => {
+  uni.navigateTo({
+    url: '/pages/history/index'
+  });
+};
+
+// 检查是否需要播放动画
+onMounted(() => {
+  const pages = getCurrentPages();
+  const currentPage = pages[pages.length - 1];
+  const showAnimationParam = currentPage.$page?.options?.showAnimation;
+
+  if (showAnimationParam === 'true') {
+    const emotion = uni.getStorageSync('selectedEmotion');
+    if (emotion) {
+      selectedEmotion.value = emotion;
+      showAnimation.value = true;
+      // 清除存储的选中情绪
+      uni.removeStorageSync('selectedEmotion');
+    }
+  }
+});
+
+// 动画结束后的处理
+const handleAnimationEnd = () => {
+  showAnimation.value = false;
+  selectedEmotion.value = null;
+  // 如果是从历史记录页面跳转来的，返回历史记录页面
+  const pages = getCurrentPages();
+  if (pages.length > 1) {
+    uni.navigateBack();
+  }
 };
 
 // 页面显示时刷新数据
@@ -295,9 +328,14 @@ onShow(() => {
         transform: translateX(8rpx);
         box-shadow: 0 4rpx 12rpx rgba(141, 110, 99, 0.2);
 
-        .companion-name,
-        .companion-desc {
-          color: #fff;
+        .companion-msg {
+          display: flex;
+          flex-direction: column;
+
+          .companion-name,
+          .companion-desc {
+            color: #fff;
+          }
         }
       }
 
@@ -354,8 +392,8 @@ onShow(() => {
 
 .history-entry {
   position: fixed;
-  left: 30rpx;
-  bottom: 40rpx;
+  right: 30rpx;
+  top: 40rpx;
   background: rgba(255, 255, 255, 0.9);
   backdrop-filter: blur(10px);
   padding: 16rpx 24rpx;
