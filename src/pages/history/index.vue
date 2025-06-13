@@ -117,7 +117,32 @@ const loadHistory = () => {
   );
 };
 
+// 检查平台
+const checkPlatform = () => {
+  // #ifdef H5
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  // if (!isMobile) {
+  //   uni.showModal({
+  //     title: '提示',
+  //     content: '为了更好的体验，请使用手机访问',
+  //     showCancel: false,
+  //     success: () => {
+  //       // uni.redirectTo({
+  //       //   url: '/pages/mobile-tip/index'
+  //       // });
+  //     }
+  //   });
+  // }
+  // #endif
+
+  // #ifdef MP
+  // 小程序环境，不需要特殊处理
+  // #endif
+};
+
+// 页面加载时检查平台
 onMounted(() => {
+  checkPlatform();
   loadHistory();
 });
 </script>
@@ -252,6 +277,37 @@ onMounted(() => {
       font-size: 24rpx;
       color: #8d6e63;
     }
+  }
+}
+
+// 添加响应式样式
+@media screen and (min-width: 768px) {
+  .history-page {
+    max-width: 750rpx;
+    margin: 0 auto;
+    background: #faf6f1;
+    min-height: 100vh;
+    position: relative;
+    padding: 30rpx;
+    box-sizing: border-box;
+  }
+
+  .history-list {
+    max-width: 600px;
+    margin: 0 auto;
+  }
+
+  .back-button {
+    left: calc(50% - 375rpx + 30rpx);
+  }
+}
+
+// 添加移动端适配
+@media screen and (max-width: 767px) {
+  .history-page {
+    width: 100%;
+    padding: 30rpx;
+    box-sizing: border-box;
   }
 }
 </style>

@@ -1,66 +1,67 @@
 <template>
-  <view class="container">
-    <!-- 头部 -->
-    <view class="header">
-      <text class="title">⚰️ 情绪坟场</text>
-      <text class="subtitle">让坏情绪在这里安息</text>
-    </view>
+  <view>
+    <view v-if="!showAnimation" class="container">
+      <!-- 头部 -->
+      <view class="header">
+        <text class="title">⚰️ 情绪坟场</text>
+        <text class="subtitle">让坏情绪在这里安息</text>
+      </view>
 
-    <!-- 主要内容区域 -->
-    <view class="main-content">
-      <!-- 情绪输入表单 -->
-      <view v-if="!showAnimation" class="emotion-form">
-        <view class="form-section">
-          <text class="section-title">🎭 选择你的情绪</text>
-          <view class="emotion-types">
-            <view v-for="type in emotionTypes" :key="type.value" class="emotion-type-item"
-              :class="{ 'is-selected': selectedEmotion === type.value }" @click="selectEmotion(type.value)">
-              <text class="emotion-icon">{{ type.icon }}</text>
-              <text class="emotion-name">{{ type.label }}</text>
-            </view>
-          </view>
-        </view>
-
-        <view class="form-section">
-          <text class="section-title">💭 描述你的感受</text>
-          <textarea v-model="emotionDescription" class="emotion-input" placeholder="写下你的情绪，让它在这里安息..." :maxlength="100"
-            show-confirm-bar />
-          <text class="input-count">{{ emotionDescription.length }}/100</text>
-        </view>
-
-        <view class="form-section">
-          <text class="section-title">🐾 选择你的陪伴者</text>
-          <view class="companion-selector">
-            <view v-for="companion in companions" :key="companion.value" class="companion-item"
-              :class="{ 'is-selected': selectedCompanion === companion.value }"
-              @click="selectCompanion(companion.value)">
-              <image :src="companion.image" mode="aspectFit" class="companion-image" />
-              <view class="companion-msg">
-                <text class="companion-name">{{ companion.label }}</text>
-                <text class="companion-desc">{{ companion.description }}</text>
+      <!-- 主要内容区域 -->
+      <view class="main-content">
+        <!-- 情绪输入表单 -->
+        <view class="emotion-form">
+          <view class="form-section">
+            <text class="section-title">🎭 选择你的情绪</text>
+            <view class="emotion-types">
+              <view v-for="type in emotionTypes" :key="type.value" class="emotion-type-item"
+                :class="{ 'is-selected': selectedEmotion === type.value }" @click="selectEmotion(type.value)">
+                <text class="emotion-icon">{{ type.icon }}</text>
+                <text class="emotion-name">{{ type.label }}</text>
               </view>
             </view>
           </view>
-        </view>
 
-        <button class="submit-button" :disabled="!canSubmit" @click="startBurying">
-          开始埋葬
-        </button>
+          <view class="form-section">
+            <text class="section-title">💭 描述你的感受</text>
+            <textarea v-model="emotionDescription" class="emotion-input" placeholder="写下你的情绪，让它在这里安息..."
+              :maxlength="100" show-confirm-bar />
+            <text class="input-count">{{ emotionDescription.length }}/100</text>
+          </view>
+
+          <view class="form-section">
+            <text class="section-title">🐾 选择你的陪伴者</text>
+            <view class="companion-selector">
+              <view v-for="companion in companions" :key="companion.value" class="companion-item"
+                :class="{ 'is-selected': selectedCompanion === companion.value }"
+                @click="selectCompanion(companion.value)">
+                <image :src="companion.image" mode="aspectFit" class="companion-image" />
+                <view class="companion-msg">
+                  <text class="companion-name">{{ companion.label }}</text>
+                  <text class="companion-desc">{{ companion.description }}</text>
+                </view>
+              </view>
+            </view>
+          </view>
+
+          <button class="submit-button" :disabled="!canSubmit" @click="startBurying">
+            开始埋葬
+          </button>
+        </view>
       </view>
 
-      <!-- 埋葬动画 -->
-      <buryAnimation v-if="showAnimation" :companion="selectedCompanion" :emotion-type="selectedEmotion"
-        :description="emotionDescription" @complete="onBuryingComplete" @animation-end="handleAnimationEnd" />
-    </view>
+      <!-- 历史记录入口 -->
+      <view class="history-entry" @click="goToHistory">
+        <text class="history-icon">🪦</text>
+        <text class="history-text">扫墓</text>
+      </view>
 
-    <!-- 历史记录入口 -->
-    <view class="history-entry" @click="goToHistory">
-      <text class="history-icon">🪦</text>
-      <text class="history-text">扫墓</text>
+      <!-- 悬浮菜单 -->
+      <floating-menu :current-page="currentPage" />
     </view>
-
-    <!-- 悬浮菜单 -->
-    <floating-menu :current-page="currentPage" />
+    <!-- 埋葬动画 -->
+    <buryAnimation v-if="showAnimation" :companion="selectedCompanion" :emotion-type="selectedEmotion"
+      :description="emotionDescription" @complete="onBuryingComplete" @animation-end="handleAnimationEnd" />
   </view>
 </template>
 
@@ -171,8 +172,33 @@ const goToHistory = () => {
   });
 };
 
-// 检查是否需要播放动画
+// 检查平台
+const checkPlatform = () => {
+  // #ifdef H5
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  if (!isMobile) {
+    // uni.showModal({
+    //   title: '提示',
+    //   content: '为了更好的体验，请使用手机访问',
+    //   showCancel: false,
+    //   success: () => {
+    //     // 可以在这里添加重定向到移动端提示页面
+    //     // uni.redirectTo({
+    //     //   url: '/pages/mobile-tip/index'
+    //     // });
+    //   }
+    // });
+  }
+  // #endif
+
+  // #ifdef MP
+  // 小程序环境，不需要特殊处理
+  // #endif
+};
+
+// 页面加载时检查平台
 onMounted(() => {
+  checkPlatform();
   const pages = getCurrentPages();
   const currentPage = pages[pages.length - 1];
   const showAnimationParam = currentPage.$page?.options?.showAnimation;
@@ -410,6 +436,35 @@ onShow(() => {
   .history-text {
     font-size: 28rpx;
     color: #5d4037;
+  }
+}
+
+// 添加响应式样式
+@media screen and (min-width: 768px) {
+  .container {
+    max-width: 750rpx; // 限制最大宽度
+    margin: 0 auto; // 居中显示
+    background: #faf6f1;
+    min-height: 100vh;
+    position: relative;
+  }
+
+  .emotion-form {
+    max-width: 600px;
+    margin: 0 auto;
+  }
+
+  .history-entry {
+    right: calc(50% - 375rpx + 30rpx); // 根据容器宽度调整位置
+  }
+}
+
+// 添加移动端适配
+@media screen and (max-width: 767px) {
+  .container {
+    width: 100%;
+    padding: 30rpx;
+    box-sizing: border-box;
   }
 }
 </style>

@@ -55,6 +55,10 @@ const navigateTo = (path: string) => {
   transform: translateY(-50%);
   z-index: 100;
 
+  @media screen and (min-width: 768px) {
+    right: calc(50% - 375rpx + 30rpx);
+  }
+
   .menu-button {
     width: 80rpx;
     height: 80rpx;
@@ -95,6 +99,10 @@ const navigateTo = (path: string) => {
     transform: translateX(20rpx);
     pointer-events: none;
     transition: all 0.3s ease;
+
+    @media screen and (min-width: 768px) {
+      min-width: 240rpx;
+    }
 
     .menu-item {
       display: flex;

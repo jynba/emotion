@@ -175,10 +175,23 @@ onMounted(() => {
   background: #faf6f1;
   overflow: hidden;
 
+  // 添加响应式样式
+  @media screen and (min-width: 768px) {
+    max-width: 750rpx;
+    margin: 0 auto;
+    height: 100vh;
+    position: relative;
+  }
+
   .scene {
     position: relative;
     width: 100%;
     height: 100%;
+
+    @media screen and (min-width: 768px) {
+      max-width: 750rpx;
+      margin: 0 auto;
+    }
   }
 
   .background {
@@ -363,6 +376,11 @@ onMounted(() => {
     box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
     transition: all 0.3s ease;
     opacity: 0;
+    max-width: 80%;
+
+    @media screen and (min-width: 768px) {
+      max-width: 600px;
+    }
 
     &.is-visible {
       transform: translateX(-50%) scale(1);
